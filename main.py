@@ -14,7 +14,6 @@ def manage_csv_file(folder_id):
     csv_path = f"marks/{folder_id}.csv"
     folder_name, files = extract_files(folder_id)
     files = files[files['type'] == 'application/pdf'].drop(columns=['type'])
-    print(files)
     
     if not os.path.exists(csv_path):
         df = pd.DataFrame({'file_id': [folder_name], 'file_name': ['Marks']})
