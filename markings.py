@@ -53,9 +53,16 @@ def mark_assignments(st):
             st.session_state.page = 'rubrics'
             st.rerun()
         
+        weightage = df.iloc[0, 2:].astype(float)  
+        attestments = df.iloc[1:, 2:].applymap(lambda x: (type(x) == bool and x) or (type(x) == str and x.lower() == 'true'))
+
+        df_save = df.copy()
+        df_save['aggregate_marks'] = attestments.apply(lambda row: (row * weightage).sum(), axis=1)
+
+        # Display the resulting DataFrame
         st.sidebar.download_button(
             label="Download Marks",
-            data=df.to_csv(index=False),
+            data=df_save.to_csv(index=False),
             file_name=f"{df.iloc[0]['file_id']}.csv",
             mime="text/csv",
             use_container_width=True
