@@ -1,22 +1,25 @@
 import pandas as pd
-import streamlit as st
+import os
 
 def mark_assignments(st):
     csv_path = f"marks/{st.session_state.folder_id}.csv"
     df = pd.read_csv(csv_path)
     
-    pdf_files = df['file_name'].tolist()
-    file_ids = df['file_id'].tolist()
+    pdf_files = df['file_name'].tolist()[1:]  # Start from index 1
+    file_ids = df['file_id'].tolist()[1:]  # Start from index 1
     
     main_col, sidebar_col = st.columns([0.7, 0.3])
     
     with main_col:
-        current_file = pdf_files[st.session_state.current_file_index]
-        current_file_id = file_ids[st.session_state.current_file_index]
-        st.header(current_file)
-        
-        pdf_url = f"https://drive.google.com/file/d/{current_file_id}/preview"
-        st.components.v1.iframe(pdf_url, width=None, height=600)
+        if 1 <= st.session_state.current_file_index < len(df):
+            current_file = pdf_files[st.session_state.current_file_index - 1]
+            current_file_id = file_ids[st.session_state.current_file_index - 1]
+            st.header(current_file)
+            
+            pdf_url = f"https://drive.google.com/file/d/{current_file_id}/preview"
+            st.components.v1.iframe(pdf_url, width=None, height=600)
+        else:
+            st.warning("No file to display. Please check if there are any files in the folder.")
     
     with sidebar_col:
         st.sidebar.header("Rubrics")
@@ -24,23 +27,24 @@ def mark_assignments(st):
         
         checkbox_states = {}
         
-        for rubric in rubrics:
-            current_value = df.at[st.session_state.current_file_index, rubric] == 'True'
-            checkbox_key = f"{current_file_id}_{rubric}"
-            checkbox_states[rubric] = st.sidebar.checkbox(rubric, value=current_value, key=checkbox_key)
+        if 1 <= st.session_state.current_file_index < len(df):
+            for rubric in rubrics:
+                current_value = df.at[st.session_state.current_file_index, rubric] == 'True'
+                checkbox_key = f"{file_ids[st.session_state.current_file_index - 1]}_{rubric}"
+                checkbox_states[rubric] = st.sidebar.checkbox(rubric, value=current_value, key=checkbox_key)
         
         st.sidebar.markdown("---")
         col1, col2 = st.sidebar.columns([1, 1])
         with col1:
             if st.button("◀ Previous", use_container_width=True):
-                update_marks(df, checkbox_states, csv_path)
+                update_marks(st, df, checkbox_states, csv_path)
                 st.session_state.current_file_index = max(1, st.session_state.current_file_index - 1)
                 st.rerun()
         
         with col2:
             if st.button("Next ▶", use_container_width=True):
-                update_marks(df, checkbox_states, csv_path)
-                st.session_state.current_file_index = min(len(pdf_files) - 1, st.session_state.current_file_index + 1)
+                update_marks(st, df, checkbox_states, csv_path)
+                st.session_state.current_file_index = min(len(df) - 1, st.session_state.current_file_index + 1)
                 st.rerun()
         
         st.sidebar.markdown("<br>" * 5, unsafe_allow_html=True)
@@ -57,10 +61,11 @@ def mark_assignments(st):
             use_container_width=True
         )
 
-def update_marks(df, checkbox_states, csv_path):
-    for rubric, state in checkbox_states.items():
-        df.at[st.session_state.current_file_index, rubric] = state
-    df.to_csv(csv_path, index=False)
+def update_marks(st, df, checkbox_states, csv_path):
+    if 1 <= st.session_state.current_file_index < len(df):
+        for rubric, state in checkbox_states.items():
+            df.at[st.session_state.current_file_index, rubric] = state
+        df.to_csv(csv_path, index=False)
+    else:
+        st.warning("Unable to update marks. Invalid file index.")
 
-if __name__ == "__main__":
-    mark_assignments(st)

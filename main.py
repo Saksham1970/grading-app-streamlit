@@ -10,11 +10,11 @@ def extract_folder_id(link):
     pattern = r'(?:https?:\/\/)?(?:www\.)?drive\.google\.com\/(?:drive\/folders\/|folderview\?id=)([a-zA-Z0-9_-]+)'
     return re.search(pattern, link).group(1) if re.search(pattern, link) else None
 
-@st.cache_data
 def manage_csv_file(folder_id):
     csv_path = f"marks/{folder_id}.csv"
     folder_name, files = extract_files(folder_id)
     files = files[files['type'] == 'application/pdf'].drop(columns=['type'])
+    print(files)
     
     if not os.path.exists(csv_path):
         df = pd.DataFrame({'file_id': [folder_name], 'file_name': ['Marks']})
